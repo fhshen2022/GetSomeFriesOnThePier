@@ -152,13 +152,13 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
         print('预约失败2')
     return 0 
 
-#ids_dict={"凌泰炜":251750}
+#ids_dict={"XXX":000000}
 
 if __name__ == '__main__':
     #信息填写
     username = ''#一卡通
     password = ''#统一身份密码
-    ids = #常用联系人代号，6位
+    ids = ids_dict['XXX']#常用联系人代号，6位
     phoneNum = ''#手机号
     session = getsession(username,password)#获取登录后的会话
     changguanID = 7 #九龙湖 羽毛球10  兵乓球7  篮球8
