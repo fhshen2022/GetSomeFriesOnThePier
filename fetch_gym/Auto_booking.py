@@ -19,13 +19,6 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import algorithms
 from Crypto.Cipher import AES
 
-# 用于验证码处理库
-from PIL import Image #PIL库安装pip install pillow -i https://pypi.tuna.tsinghua.edu.cn/simple
-from io import BytesIO
-#文字识别库 需要安装tesseract  并添加环境变量 以下是环境变量配置的教程链接
-#https://segmentfault.com/a/1190000014086067
-import pytesseract 
-
 # 加密函数 用来把密码加密进行登录 网上找的代码 正常使用 好评
 class PrpCrypt(object):
     def __init__(self, key):
@@ -94,28 +87,12 @@ def getsession(username,password,k=0):
         print('登录失败，放弃了')
         return 0 
 
-def recognize_captcha(img_path):
-    #验证码识别
-    im = Image.open(img_path)
-    im = im.convert("L")
-    # 1. threshold the image 色块两极化  就是去噪  判断的准
-    threshold = 140
-    table = [0]*threshold + [1]*(256-threshold)
-    out = im.point(table, '1')
-    # out.show() #显示处理后的验证码图片
-    # 2. recognize with tesseract
-    num = pytesseract.image_to_string(out)
-    print(num)
-    return num.replace("\n", "")#处理结果带了换行符，很奇怪，这里加了个小处理
-
 def yuyue(session,start_time,day,changguanID,ids,phoneNum):
     #发起预约
     start_time = start_time+':00-'+str(int(start_time)+1)+':00'
     useTime = day+" "+start_time
     url2 = 'http://yuyue.seu.edu.cn/eduplus/validateimage'#获取验证码
     r2 = session.get(url2)
-    tempIm = BytesIO(r2.content)
-    # validcode = recognize_captcha(tempIm)#验证码识别
     validcode = ocr.classification(r2.content)
     Data2 = {
         'ids': ids,
@@ -124,46 +101,24 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
         'allowHalf': 2,
         'validateCode': validcode
     }
-    #print(Data2)
-    #预约需要通过两步，第一步判断预约请求是否合法，第二个链接用来发送添加预约记录的请求
-    #也许可以不管第一步直接发送第二步的请求，但我没试过，且不建议删去第一步，
     url3 = 'http://yuyue.seu.edu.cn/eduplus/order/order/order/judgeUseUser.do?sclId=1'
     r3 = session.post(url3,data=Data2)
     print(r3.text)#错误会返回不同的信息，这里不统一写了，只看正确的判断
-    if '{}' in r3.text:
-        #print('审核预约请求成功')
-        Data3 = {
-            'orderVO.useTime': useTime,
-            'orderVO.itemId': changguanID,
-            'orderVO.useMode': 2,
-            'useUserIds': ids,
-            'orderVO.phone': phoneNum,
-            'orderVO.remark': '',
-            'validateCode': validcode
-        }
-        url4 = 'http://yuyue.seu.edu.cn/eduplus/order/order/order/insertOredr.do?sclId=1'
-        r4 = session.post(url4,data=Data3)
-        if 'success' in r4.text:
-            print('成功预约')
-            return 1
-        else:
-            print('预约失败1')
-    else:
-        print('预约失败2')
+    
     return 0 
 
-#ids_dict={"XXX":000000}
+ids_dict={"凌泰炜":251750,'王屹之':251784,'宋欣楠':208972}
 
 if __name__ == '__main__':
     #信息填写
-    username = ''#一卡通
-    password = ''#统一身份密码
-    ids = ids_dict['XXX']#常用联系人代号，6位
-    phoneNum = ''#手机号
+    username = '220222114'#一卡通
+    password = 'sfh19991008'#统一身份密码
+    ids = ids_dict['凌泰炜']#常用联系人代号，6位
+    phoneNum = '1885153218'#手机号
     session = getsession(username,password)#获取登录后的会话
     changguanID = 7 #九龙湖 羽毛球10  兵乓球7  篮球8
-    target_day_flag = ['2022-11-01']#格式'2021-04-16'  为空自动预约包含今天在内的下三天内
-    target_time = ['18'] #如18:00-19:00 则填'18'即可 列表模式
+    target_day_flag = ['2022-11-16']#格式'2021-04-16'  为空自动预约包含今天在内的下三天内
+    target_time = ['18','19','20'] #如18:00-19:00 则填'18'即可 列表模式
 
     #pushplus的token 即令牌  用于将信息通过pushplus公众号发送到微信  没有不影响自动预约功能，但影响通知功能
     #pushplus的topic 即群组号  一对多推送才需要使用
@@ -204,20 +159,25 @@ if __name__ == '__main__':
                     break
                 if 'state-icon icon-yes' in r2.text:
                     a =  re.findall('(?<=icon-yes"></i> <em class="time">\r\n\t\t\t\t\t)([\d]{1,2}):00-[\d]{1,2}:00 </em>\r\n\t\t\t\t\t<em class="time2">([\d]{1,2}) <span>/</span> \r\n\t\t\t\t\t([\d]{1,2})',r2.text)
-                    print("a:",a)
+                    #print("a:",a)
                     if a:
                         content += str(i)+'<br>'
                         for j in a:
                             tmp1.extend(j[0]+':00-'+str(int(j[0])+1)+':00可预约，当前人数'+j[1]+'/'+j[2]+'<br>')
                             content += j[0]+':00-'+str(int(j[0])+1)+':00可预约，当前人数'+j[1]+'/'+j[2]+'<br>'
-                            print(j[0],str(i))
+                            #print(j[0],str(i))
                             if j[0] in target_time and str(i) in target_day:
                                 print('预约ing')
                                 yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
+                                #print(yuyue_flag)
                                 if yuyue_flag:
                                     tmpContent = str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'
                                     print(tmpContent)
                                     requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'预约成功'+'&content='+str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'+'&template=html&topic='+topic)
+                                else:
+                                    yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
+                                    if not yuyue_flag:
+                                        yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
                         flag = 1
                 #日期为周末 预约有第二页 懒得改了 直接复制过来了
                 if 'all_pages" v2' in r2.text:
@@ -245,12 +205,12 @@ if __name__ == '__main__':
                             flag = 1
             if flag and tmp1!=tmp2:#找到有可预约项，且和上一次发送时不一致，则重新发送
                 tmp2 = tmp1[:]
-                print(content)
+                #print(content)
                 requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'场馆预约'+'&content='+content+'&template=html&topic='+topic)
-                print('发送成功')
-                time.sleep(60)
+                #print('发送成功')
+                time.sleep(1)
             else:
                 print('第'+str(k)+'次，未找到可预约项或未发生变化')
-            time.sleep(3)
+            time.sleep(1)
     else:
         print('该修修登录部分了')
