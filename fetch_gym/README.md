@@ -1,5 +1,6 @@
 # Auto_booking
 原代码出自 [qiangzhang0925/Auto_booking: 东南大学体育场馆自动预定python文件 (github.com)](https://github.com/qiangzhang0925/Auto_booking)
+简化了预约过程；验证码识别错误下进行重新预约。
 
 ### 使用步骤
 - 安装依赖包
