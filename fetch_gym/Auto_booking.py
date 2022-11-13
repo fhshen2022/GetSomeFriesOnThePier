@@ -93,6 +93,7 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
     useTime = day+" "+start_time
     url2 = 'http://yuyue.seu.edu.cn/eduplus/validateimage'#获取验证码
     r2 = session.get(url2)
+    #print(r2.text)
     validcode = ocr.classification(r2.content)
     Data2 = {
         'ids': ids,
@@ -103,20 +104,25 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
     }
     url3 = 'http://yuyue.seu.edu.cn/eduplus/order/order/order/judgeUseUser.do?sclId=1'
     r3 = session.post(url3,data=Data2)
-    print(r3.text)#错误会返回不同的信息，这里不统一写了，只看正确的判断
-    
-    return 0 
+    #print(r3.text)#错误会返回不同的信息，这里不统一写了，只看正确的判断
+    flag = 0
+    if 'sucuss' in r3.text:
+        flag=1
+    elif '新增预约失败或暂无可用场地' in r3.text:
+        flag=2
+    return flag
 
+ids_dict={"凌泰炜":251750,'王屹之':251784,'宋欣楠':208972}
 
 if __name__ == '__main__':
     #信息填写
-    username = ''#一卡通
-    password = ''#统一身份密码
-    ids = '111111'#常用联系人代号，6位
+    username = '220222114'#一卡通
+    password = 'sfh19991008'#统一身份密码
+    ids = ids_dict['凌泰炜']#常用联系人代号，6位
     phoneNum = '1885153218'#手机号
     session = getsession(username,password)#获取登录后的会话
     changguanID = 7 #九龙湖 羽毛球10  兵乓球7  篮球8
-    target_day_flag = ['2022-11-16']#格式'2021-04-16'  为空自动预约包含今天在内的下三天内
+    target_day_flag = ['2022-11-14']#格式'2021-04-16'  为空自动预约包含今天在内的下三天内
     target_time = ['18','19','20'] #如18:00-19:00 则填'18'即可 列表模式
 
     #pushplus的token 即令牌  用于将信息通过pushplus公众号发送到微信  没有不影响自动预约功能，但影响通知功能
@@ -131,6 +137,7 @@ if __name__ == '__main__':
 
     k = 0
     tmp2 = ['用于判断是否和上次不一致']
+    success_booking = 0
     if session:#session会话成功登录才通过
         while(1):
             k += 1
@@ -169,14 +176,21 @@ if __name__ == '__main__':
                                 print('预约ing')
                                 yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
                                 #print(yuyue_flag)
-                                if yuyue_flag:
-                                    tmpContent = str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'
-                                    print(tmpContent)
-                                    requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'预约成功'+'&content='+str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'+'&template=html&topic='+topic)
-                                else:
-                                    yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
-                                    if not yuyue_flag:
+                                while(1):
+                                    if yuyue_flag==1:
+                                        tmpContent = str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'
+                                        print(tmpContent)
+                                        requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'预约成功'+'&content='+str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'+'&template=html&topic='+topic)
+                                        success_booking=1
+                                        break
+                                    elif yuyue_flag==2:
+                                        print('新增预约失败或暂无可用场地')
+                                        break
+                                    else:
+                                        print('验证码错误，正在重试')
                                         yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
+                                        
+                                        
                         flag = 1
                 #日期为周末 预约有第二页 懒得改了 直接复制过来了
                 if 'all_pages" v2' in r2.text:
@@ -197,10 +211,19 @@ if __name__ == '__main__':
                                 if j[0] in target_time and str(i) in target_day:
                                     print('预约ing')
                                     yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
-                                    if yuyue_flag:
-                                        tmpContent = str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'
-                                        print(tmpContent)
-                                        requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'预约成功'+'&content='+str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'+'&template=html&topic='+topic)
+                                    while(1):
+                                        if yuyue_flag==1:
+                                            tmpContent = str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'
+                                            print(tmpContent)
+                                            requests.get('http://pushplus.hxtrip.com/send?token='+token+'&title='+changguan+'预约成功'+'&content='+str(i)+'<br>'+j[0]+':00-'+str(int(j[0])+1)+':00预约成功'+'&template=html&topic='+topic)
+                                            success_booking=1
+                                            break
+                                        elif yuyue_flag==2:
+                                            print('预约数量到达上限或暂无可用场地')
+                                            break
+                                        else:
+                                            print('验证码错误，正在重试')
+                                            yuyue_flag = yuyue(session,j[0],str(i),changguanID,ids,phoneNum)
                             flag = 1
             if flag and tmp1!=tmp2:#找到有可预约项，且和上一次发送时不一致，则重新发送
                 tmp2 = tmp1[:]
@@ -210,6 +233,8 @@ if __name__ == '__main__':
                 time.sleep(1)
             else:
                 print('第'+str(k)+'次，未找到可预约项或未发生变化')
+            if success_booking==1:
+                break
             time.sleep(1)
     else:
         print('该修修登录部分了')
