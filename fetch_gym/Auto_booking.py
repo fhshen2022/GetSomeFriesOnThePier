@@ -107,13 +107,12 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
     
     return 0 
 
-ids_dict={"凌泰炜":251750,'王屹之':251784,'宋欣楠':208972}
 
 if __name__ == '__main__':
     #信息填写
-    username = '220222114'#一卡通
-    password = 'sfh19991008'#统一身份密码
-    ids = ids_dict['凌泰炜']#常用联系人代号，6位
+    username = ''#一卡通
+    password = ''#统一身份密码
+    ids = '111111'#常用联系人代号，6位
     phoneNum = '1885153218'#手机号
     session = getsession(username,password)#获取登录后的会话
     changguanID = 7 #九龙湖 羽毛球10  兵乓球7  篮球8
