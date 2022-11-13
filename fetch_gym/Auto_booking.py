@@ -112,14 +112,13 @@ def yuyue(session,start_time,day,changguanID,ids,phoneNum):
         flag=2
     return flag
 
-ids_dict={"凌泰炜":251750,'王屹之':251784,'宋欣楠':208972}
 
 if __name__ == '__main__':
     #信息填写
-    username = '220222114'#一卡通
-    password = 'sfh19991008'#统一身份密码
-    ids = ids_dict['凌泰炜']#常用联系人代号，6位
-    phoneNum = '1885153218'#手机号
+    username = ''#一卡通
+    password = ''#统一身份密码
+    ids = 000000 #常用联系人代号，6位
+    phoneNum = ''#手机号
     session = getsession(username,password)#获取登录后的会话
     changguanID = 7 #九龙湖 羽毛球10  兵乓球7  篮球8
     target_day_flag = ['2022-11-14']#格式'2021-04-16'  为空自动预约包含今天在内的下三天内
